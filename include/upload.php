@@ -29,7 +29,7 @@ if(in_array($fileActualExt,$allowed)){
     $imageFullName = $newFileName. ".". uniqid("",true).".".$fileActualExt;
     $tempDestination = "../temp/".$imageFullName;
     $fileDestination = "../images/".$imageFullName;
-    
+
 
 
     include_once 'dbh.php';
@@ -53,19 +53,19 @@ if(in_array($fileActualExt,$allowed)){
         move_uploaded_file($fileTempName,$tempDestination);
 
         #echo '<img src="'.$tempDestination.'">';
-        header('Content-type: image/jpg');
+        #header('Content-type: image/jpg');
         #echo $tempDestination;
-        $image = new Imagick($tempDestination);
+        #$image = new Imagick($tempDestination);
 
 // If 0 is provided as a width or height parameter,
 // aspect ratio is maintained
-        $image->thumbnailImage(100, 0);
+        #$image->thumbnailImage(100, 0);
 
-        echo $image;
+        #echo $image;
         #unlink($tempDestination);
-        #$move_uploaded_file($fileTempName,$fileDestination);
-        #header("Location: ../index.php?upload=success");
-        #exit();
+        move_uploaded_file($fileTempName,$fileDestination);
+        header("Location: ../index.php?upload=success");
+        exit();
       }
 
 
