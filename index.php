@@ -50,7 +50,7 @@ if(!mysqli_stmt_prepare($stmt, $sql)){
     {
       if(isset($_COOKIE[$cookie_name])){
         if($row['imgOwner'] == $_COOKIE[$cookie_name] ){
-        echo '<div class="img-col"><img src="images/'.$row['imgFullName'].'">
+        echo '<div class="img-col"><img src="temp/'.$row['imgFullName'].'">
         <h3 class="img-title">'.$row['imgName'].'</h3>
         </div>';
            if($count %2 == 0)
@@ -67,7 +67,7 @@ if(!mysqli_stmt_prepare($stmt, $sql)){
 
     }
     elseif($row['imgMode'] == 'public'){
-      echo '<div class="img-col"><img src="images/'.$row['imgFullName'].'">
+      echo '<div class="img-col"><img src="temp/'.$row['imgFullName'].'">
       <h3 class="img-title">'.$row['imgName'].'</h3>
       </div>';
          if($count %2 == 0)
