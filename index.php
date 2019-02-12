@@ -46,13 +46,13 @@ return $items;
 
 
 
-function intdiv($a, $b){
+function integerdivision($a, $b){
     return ($a - $a % $b) / $b;
 }
 function numPages($a,$b){
-  if(($a/$b) > (intdiv($a,$b)))
+  if(($a/$b) > (integerdivision($a,$b)))
   {
-    return intdiv($a,$b)+1;
+    return integerdivision($a,$b)+1;
   }else{
     return ($a/$b);
   }
@@ -139,6 +139,7 @@ if(isset($_COOKIE[$cookie_name])){
 //pagination configuration
 $offset = 8;
 $items = getItems();
+if(sizeof($items) >0){
 
 $numpage = numPages(sizeof($items),$offset);
 
@@ -186,7 +187,7 @@ echo '<p>page '.$currentPage. ' of '.$numpage.'</p>
   <p>1 of 1 page</p>
   </div>';
 }
-
+}
 ?>
 
 
