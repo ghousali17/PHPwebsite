@@ -1,5 +1,6 @@
 <?php
-
+include 'dbh.php';
+ 
 function execute($command)
     {
         # remove newlines and convert single quotes to double to prevent errors
@@ -9,14 +10,14 @@ function execute($command)
         exec($command);
     }
      
-function border($input, $color = 'black', $width = 20)
+function border($input,$output, $color = 'black', $width = 20)
     {
-        execute("convert $input -bordercolor $color -border {$width}x{$width} $input");
+        execute("convert $input -bordercolor $color -border {$width}x{$width} $output");
     }
 
-function blur($input, $radius = 10, $sigma= 5)
+function blur($input, $output, $radius = 10, $sigma= 5)
     {   $temp = $radius* $sigma;
-        execute("convert $input -blur $temp $input");
+        execute("convert $input -blur $temp $output");
     }
 
  function lomo($input)
@@ -39,12 +40,12 @@ function vignette($input, $color_1 = 'none', $color_2 = 'black', $crop_factor = 
         -gravity center -crop {$width}x{$height}+0+0 +repage )
         -compose multiply -flatten $input");   
     }
-function lensflare($input){
+function lensflare($input,$output){
   list($width,$height) = getimagesize($input);
   $temp = $width * $height;
   $cmd_1 = "convert '../tools/lensflare.png' -resize $width '../tools/tmp.png'";
   execute($cmd_1);
-  $cmd_2 = "composite -compose screen -gravity northwest ../tools/tmp.png  $input $input";
+  $cmd_2 = "composite -compose screen -gravity northwest ../tools/tmp.png  $input $output";
   execute($cmd_2);
   $cmd_3 = "rm ../tools/tmp.png";
   execute($cmd_3);
@@ -63,17 +64,68 @@ function blackwhite($input)
   
 }
 
+function getNextPath($tempDestination, $currentversion){
+  $output = "";
+  $tempArray = explode('=', basename($tempDestination));
+  if($tempArray['0'] == 'version'){
+      $filename = $tempArray['2'];
+      $version = $tempArray['1'];
+      $version++;
+      $output = dirname($tempDestination).'/version='.$version.'='.$filename;
+  }else{
+
+    $output =dirname($tempDestination).'/version=1'.'='.basename($tempDestination);
+  }
+return $output;
+}
+
+function getPreviousPath($tempDestination){
+  $tempArray = explode('=', basename($tempDestination));
+  $output = "";
+  if($tempArray['0'] == 'version'){
+      $filename = $tempArray['2'];
+      $version = $tempArray['1'];
+      if($version == 1)
+      {
+        $output= dirname($tempDestination).'/'.$filename;
+  
+      }else
+      {
+        $version--;
+        $output = dirname($tempDestination).'/version='.$version.'='.$filename;
+      }
+      
+  }else{
+
+    $output = dirname($tempDestination).'/'.basename($tempDestination);
+ 
+  }
+return $output;
+
+}
+
 $currentversion = 0; 
 $fullUrl = "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
 if(strpos($fullUrl, "upload=")){
 $url = parse_url($fullUrl);
 parse_str($url['query']);
+
+
 $tempDestination = $upload;
+echo dirname($tempDestination);
+echo('delimiter');
+echo basename($tempDestination);
+echo'\n';
+
+$nextversion = $currentversion+1;
+
+
 if(strpos($fullUrl, "version=")){
 $url = parse_url($fullUrl);
 parse_str($url['query']);
 $currentversion = $version;
 }
+$outputDestination = getNextPath($tempDestination,$currentversion);
 if(strpos($fullUrl, "filter=")){
 $url = parse_url($fullUrl);
 parse_str($url['query']);
@@ -82,17 +134,88 @@ $filterFunction = $filter;
 // call edit functions!
 if($filterFunction == 'border'){
   #echo 'border is called!';
-  border($tempDestination);
+  border($tempDestination,$outputDestination);
+  $tempDestination = $outputDestination;
 }elseif($filterFunction == 'blur'){
-  blur($tempDestination);
+  blur($tempDestination,$outputDestination);
+  $tempDestination = $outputDestination;
+
 }elseif($filterFunction == 'lomo'){
   lomo($tempDestination);
 }elseif($filterFunction == 'lensflare'){
-  lensflare($tempDestination);
+  lensflare($tempDestination,$outputDestination);
+  $tempDestination = $outputDestination;
 }elseif($filterFunction == 'bw'){
   blackwhite($tempDestination);
 }
 
+
+}
+if(strpos($fullUrl, "command=")){
+$url = parse_url($fullUrl);
+parse_str($url['query']);
+$commandmode = $command;
+
+if($commandmode == 'discard'){
+  unlink($tempDestination);
+  $tempArray = explode('=', basename($tempDestination));
+  if($tempArray['0'] == 'version'){
+    $filename = $tempArray['2'];
+
+    }else{
+      $filename = basename($tempDestination);
+          }
+  
+    
+  $sql = "DELETE FROM gallery WHERE imgFullName='".$filename."'";
+  $stmt = mysqli_stmt_init($conn);
+  if(!mysqli_stmt_prepare($stmt, $sql)){
+      echo "error in preparation";
+     
+     }else{
+       mysqli_stmt_execute($stmt);
+     } 
+  header("Location: ../index.php");
+  exit();
+}elseif($commandmode == 'undo'){
+  $temppath = $tempDestination;
+  $tempDestination = getPreviousPath($tempDestination);
+  if($tempDestination != $temppath){
+   unlink($temppath);
+   
+  }
+  if($currentversion > 0)
+  {
+    $currentversion--;
+    header("Location: ?upload=".$tempDestination."&version=".$currentversion);
+    exit();
+
+  }
+  else{
+   
+     header("Location: ?upload=".$tempDestination);
+     exit();
+}
+  
+  }elseif($commandmode == 'finish'){
+    $tempArray = explode('=', basename($tempDestination));
+    if($tempArray['0'] == 'version'){
+      $filename = $tempArray['2'];
+
+    }else{
+      $filename = basename($tempDestination);
+    }
+    $finalPath = "../images/".$filename;
+    copy($tempDestination,$finalPath);
+    unlink($tempDestination);
+    #echo "Temp:".$tempDestination;
+    #echo "Final".$finalPath;
+    header("Location: uploadcomplete.php?upload=".$finalPath);
+    exit();
+
+
+
+  }
 
 }
 }
@@ -128,41 +251,51 @@ if(isset($_POST['border'])){
   header("Location: ?filter=border&upload=".$tempDestination."&version=".$currentversion);
   exit();
 }elseif(isset($_POST['lomo'])){
-  header("Location: ?filter=lomo&upload=".$tempDestination);
+   $currentversion++;
+  header("Location: ?filter=lomo&upload=".$tempDestination."&version=".$currentversion);
+
   exit();
 
 }elseif(isset($_POST['lensflare'])){
-  header("Location: ?filter=lensflare&upload=".$tempDestination);
-  exit();
+   $currentversion++;
+  header("Location: ?filter=lensflare&upload=".$tempDestination."&version=".$currentversion);
+ exit();
 
 
 }elseif(isset($_POST['bw'])){
-  header("Location: ?filter=bw&upload=".$tempDestination);
+  $currentversion++;
+  header("Location: ?filter=bw&upload=".$tempDestination."&version=".$currentversion);
+
   exit();
 
 
 }elseif(isset($_POST['blur'])){
-  header("Location: ?filter=blur&upload=".$tempDestination);
+  $currentversion++;
+  header("Location: ?filter=blur&upload=".$tempDestination."&version=".$currentversion);
+
   exit();
 
 
 }else {echo '<img src='.$tempDestination.'>';}
 
-  if(isset($_POST['undo'])){
+if(isset($_POST['undo'])){
+  header("Location: ?command=undo&upload=".$tempDestination."&version=".$currentversion);
+  exit();
 
-  }elseif(isset($_POST['discard'])){
-    unlink($tempDestination);
-    header("Location: ../index.php");
+}elseif(isset($_POST['discard'])){
+    header("Location: ?command=discard&upload=".$tempDestination."&version=".$currentversion);
     exit();
 
 
   }elseif(isset($_POST['finish'])){
-
-  }?>
+    header("Location: ?command=finish&upload=".$tempDestination."&version=".$currentversion);
+    exit();
+}
+?>
 
 </div>
 <div class="editor-column">
-<?php echo'<form method="POST" action="editor.php?upload='.$tempDestination.'">'; ?>
+<?php echo'<form method="POST" action="editor.php?upload='.$tempDestination."&version=".$currentversion.'">'; ?>
 
 <button class="button filter-button" name="border" type="submit">Border</button>
 <button class="button filter-button" name="lomo" type="submit">Lomo</button>
@@ -174,7 +307,7 @@ if(isset($_POST['border'])){
 </div>
 <div class="editor-row">
 <div class= "editor-column-lg">
-<?php echo'<form method="POST" action="editor.php?upload='.$tempDestination.'">'; ?>
+<?php echo'<form method="POST" action="editor.php?upload='.$tempDestination."&version=".$currentversion.'">'; ?>
 <button class="button filter-control" name="undo" type="submit">Undo</button>
 <button class="button filter-control"name="discard" type="submit">Discard</button>
 <button class="button filter-control"name="finish" type="submit">Finish</button>

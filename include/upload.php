@@ -63,7 +63,7 @@ if(in_array($fileActualExt,$allowed)){
 
         #echo $image;
         #unlink($tempDestination);
-        move_uploaded_file($fileTempName,$fileDestination);
+        #move_uploaded_file($fileTempName,$fileDestination);
         header("Location: editor.php?upload=".$tempDestination);
         exit();
       }

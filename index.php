@@ -32,7 +32,7 @@ function getItems(){
     $rowCount = mysqli_num_rows($result);
     $count = 0;
     while($row = mysqli_fetch_assoc($result) ){
-      $items[] = '<div class="gallery-column"><img src="temp/'.$row['imgFullName'].'">
+      $items[] = '<div class="gallery-column"><img src="images/'.$row['imgFullName'].'">
       <h3 class="img-title">'.$row['imgName'].'</h3>
       </div>';
 
