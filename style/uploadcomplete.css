@@ -1,0 +1,46 @@
+.complete-container{	 
+  display:block;
+  text-align: center;
+  margin-top:5%;
+  margin-left:10%;
+  margin-right:10%;
+  min-height: 300px;
+
+}
+
+.complete-container .complete-row{
+  width:100%;
+
+}
+.complete-container .complete-row .complete-column{
+
+  width:50%;
+  padding:10px;
+  display: block;
+  margin:auto; 
+}
+
+.complete-container .complete-row .complete-column img{
+  overflow: hidden;
+  display: flex;
+  width:100%;
+  height: 300px;
+
+
+}
+
+.complete-container .button{
+	margin-top:30px;
+
+}
+
+.complete-container .button:hover {
+  color: #ddd;
+  background-color: black;
+}
+.complete-row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+

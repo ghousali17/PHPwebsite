@@ -41,6 +41,10 @@
 .editor-container .button{
   margin:10px;
 }
+.editor-container .button:hover {
+    color: #ddd;
+    background-color: black;
+}
 .editor-column-img {
   float: left;
   width:55%;
@@ -57,4 +61,21 @@
   content: "";
   display: table;
   clear: both;
+}
+.yellow: {
+  color: #4CAF50 !important; /* Green */
+  background-color: white !important;
+}
+
+.editor-container .green:hover {
+  background-color: #4CAF50; /* Green */
+  color: white;
+}
+.editor-container .yellow:hover {
+  background-color: #FFA500; /* Green */
+  color: white;
+}
+.editor-container .red:hover {
+  background-color: red; /* Green */
+  color: white;
 }
