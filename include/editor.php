@@ -155,9 +155,7 @@ if(strpos($fullUrl, "command=")){
 $url = parse_url($fullUrl);
 parse_str($url['query']);
 $commandmode = $command;
-
 if($commandmode == 'discard'){
-  unlink($tempDestination);
   $tempArray = explode('=', basename($tempDestination));
   if($tempArray['0'] == 'version'){
     $filename = $tempArray['2'];
@@ -171,10 +169,22 @@ if($commandmode == 'discard'){
   $stmt = mysqli_stmt_init($conn);
   if(!mysqli_stmt_prepare($stmt, $sql)){
       echo "error in preparation";
-     
+
      }else{
        mysqli_stmt_execute($stmt);
      } 
+
+  $temppath = $tempDestination;
+  $tempDestination = getPreviousPath($tempDestination);
+  while($temppath != $tempDestination)
+  {
+      unlink($temppath);
+      $temppath = $tempDestination;
+      $tempDestination = getPreviousPath($tempDestination);
+  
+  
+  }
+  unlink($tempDestination);
   header("Location: ../index.php");
   exit();
 }elseif($commandmode == 'undo'){
@@ -207,6 +217,18 @@ if($commandmode == 'discard'){
     }
     $finalPath = "../images/".$filename;
     copy($tempDestination,$finalPath);
+    $temppath = $tempDestination;
+   $tempDestination = getPreviousPath($tempDestination);
+    while($temppath != $tempDestination)
+    {
+      unlink($temppath);
+      $temppath = $tempDestination;
+      $tempDestination = getPreviousPath($tempDestination);
+  
+  
+    }
+    unlink($tempDestination);
+  
     unlink($tempDestination);
     #echo "Temp:".$tempDestination;
     #echo "Final".$finalPath;

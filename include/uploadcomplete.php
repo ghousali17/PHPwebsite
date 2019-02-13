@@ -1,6 +1,6 @@
 <?php
 $fullUrl = "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
-include_once 'include/dbh.php';
+
 $cookie_name = 'asg1';
 if(strpos($fullUrl, "upload=")){
 $url = parse_url($fullUrl);
@@ -69,7 +69,7 @@ if(isset($_COOKIE[$cookie_name])){
 	<?php	echo '<img src="'.$tempDestination.'">' ?>
 	</div>
 	<div class="complete-row">
-		<form action ="../index.php">
+		<form method = "POST" action ="../index.php">
 			<button class = "button" type ="submit"> Return to gallery</button>
 		</form>
 	</div>
