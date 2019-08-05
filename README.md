@@ -1,4 +1,4 @@
-# csci4140-assignment1
+# PHP image editing and storing website
 Assignment 1 for CSCI4140 Term 2 2018-2019
 
 ### Link:- https://csci4140-assignment1-ghous.herokuapp.com/
