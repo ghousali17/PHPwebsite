@@ -1,6 +1,9 @@
 <?php
-$fullUrl = "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+
+
+$fullUrl = 'http://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
 include_once 'include/dbh.php';
+include_once 'include/authenticate.php';
 $cookie_name = 'asg1';
 $currentPage = 1;
 if(strpos($fullUrl, "page=")){
@@ -10,13 +13,12 @@ $currentPage = $page;
 
 }
 
-function getItems(){
-  include 'include/dbh.php';
+function getItems($conn){
   $cookie_name = 'asg1';
 
   $items = array();
 
-  if(isset($_COOKIE[$cookie_name])){
+  if(authenticate($conn)){
     $sql = "SELECT * FROM gallery WHERE imgMode = 'public' OR ( imgMode = 'private' AND imgOwner = '" .$_COOKIE[$cookie_name]."' ) ORDER BY imgID DESC;";
 
   }else{
@@ -25,16 +27,22 @@ function getItems(){
 
   $stmt = mysqli_stmt_init($conn);
   if(!mysqli_stmt_prepare($stmt, $sql)){
-    echo "error";
+    echo "error in databse connection";
   }else{
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
     $rowCount = mysqli_num_rows($result);
-    $count = 0;
+    $items = [];
     while($row = mysqli_fetch_assoc($result) ){
-      $items[] = '<div class="gallery-column"><img src="images/'.$row['imgFullName'].'">
-      <h3 class="img-title">'.$row['imgName'].'</h3>
+      $path = 'images/'.$row['imgFullName'];
+      if(file_exists($path))
+      {
+      $items[] = '<div class="gallery-column">
+      <a href = "http://'.$_SERVER['HTTP_HOST'].'/images/'.$row['imgFullName'].'"><img src="images/'.$row['imgFullName'].'"></a>
+      <h3></h3>
+      
       </div>';
+    }
 
 
     }
@@ -94,6 +102,7 @@ for($i = $start; $i < $last; $i++)
   <link rel="stylesheet" href="style/index.css">
   <link href="https://fonts.googleapis.com/css?family=Questrial" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css?family=Indie+Flower" rel="stylesheet">
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
 
 </head>
 <body >
@@ -104,7 +113,7 @@ for($i = $start; $i < $last; $i++)
 
 <?php
 
-if(isset($_COOKIE[$cookie_name])){
+if(authenticate($conn)){
   if($_COOKIE[$cookie_name] == 'admin')
   {
     echo '<a class="nav-txt">Welcome '.$_COOKIE[$cookie_name].'!</a>';
@@ -126,24 +135,21 @@ if(isset($_COOKIE[$cookie_name])){
 }else{
   echo '<a class="nav-txt">Log in for the complete experience...</a>';
   echo
-  '<a class="nav-button"><form method="POST" action="loginform.php">
+  '<a class="nav-button"><form method="POST" action="include/loginform.php">
   <button style="float:right;" class="button login-button" name="login-submit" type="submit" >log in</button>
   </form></a>';
 }
 
 
-?>
+  ?>
 </div>
 
 <?php
 //pagination configuration
 $offset = 8;
-$items = getItems();
+$items = getItems($conn);
 if(sizeof($items) >0){
-
 $numpage = numPages(sizeof($items),$offset);
-
-
 //gallery display
 $last = sizeof($items);
 $start = 0;
@@ -169,7 +175,6 @@ if($currentPage < 1){
   header("Location: ?page=1");
   exit();
 }
-
 echo '<div class = "gallery-container">';
 echo '<div class = "gallery-row">';
 print_page($items, $currentPage, $last, 8);
@@ -178,15 +183,32 @@ echo '</div>';
 if($numpage > 1){
 
 echo  '<div class = "page-nav">
-<button name="next" type="submit" action = "next"><a href="?page=' .$previous.'">Previous</a></button>';
-echo '<p>page '.$currentPage. ' of '.$numpage.'</p>
-<button name="next" type="submit" action = "next"><a href="?page='.$next.'">Next</a></button>
+<div class="nav-row">
+<div class="nav-column">
+<a href="?page=' .$previous.'"><button class="button">Previous</button></a>
+</div>';
+echo '
+<div class="nav-column-middle">
+<p>page '.$currentPage. ' of '.$numpage.'</p>
+</div>
+<div class="nav-column">
+<a href="?page='.$next.'"><button class="button">Next</button></a>
+</div>
+</div>
 </div>';
 }else{
   echo  '<div class = "page-nav">
   <p>1 of 1 page</p>
-  </div>';
+  </div>';}
 }
+else{
+echo '<div class = "gallery-container">';
+      echo '<div class = "gallery-row" style="font-size:22px; text-align:left;">
+      Your newsfeed is empty :(
+      </div>';
+echo '</div>';
+
+
 }
 ?>
 
@@ -194,18 +216,35 @@ echo '<p>page '.$currentPage. ' of '.$numpage.'</p>
 
 <?php
 
-if(isset($_COOKIE[$cookie_name])){
+if(authenticate($conn)){
+
 echo '<div class="upload-container">
 <form action="include/upload.php" method = "post" enctype="multipart/form-data">
-<input type="text" name="filename" placeholder="Image title">
-<select name="filemode">
-  <option value="private">private</option>
-  <option value="public">public</option>
+<input class = "upload-file" type ="file" name="file">
+<select class="upload-select" name="filemode">
+  <option value="private">Private</option>
+  <option value="public">Public</option>
 </select>
-<input type ="file" name="file">
-<button type="submit" name="file-submit">upload</button>
-</form>
-</div>';
+
+<button class = "button" type="submit" name="file-submit">upload</button>
+</form>';
+echo '<div class="error">';
+
+$fullUrl = 'http://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
+if(strpos($fullUrl, "upload=")){
+$url = parse_url($fullUrl);
+parse_str($url['query']);
+if($upload == 'mismatch')
+{
+  echo 'Invalid file type!';
+}elseif($upload == 'error'){
+  echo 'Please select a file!';
+}elseif($upload == 'internalerror'){
+  echo 'Unable to upload file!';
+}
+}
+
+echo '</div></div>';
 
 }else{
  echo '';

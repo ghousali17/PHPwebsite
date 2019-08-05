@@ -1,9 +1,10 @@
 <?php
-$fullUrl = "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+$fullUrl = 'http://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
 include_once 'dbh.php';
+include_once 'authenticate.php';
 $cookie_name = 'asg1';
 
-if(isset($_COOKIE[$cookie_name])){
+if(authenticate($conn)){
   if($_COOKIE[$cookie_name] != 'admin'){
     header("Location: ../index.php?init=notauthorised");
     exit();
@@ -42,10 +43,9 @@ if(isset($_COOKIE[$cookie_name])){
 
 <div class="init-container">
 <div class="init-heading">System Initialization</div>
-<div class="init-explanation">Warning: all data would be deleted</div>
-<form method="POST" action = "init.php">
-<button class="button init-button go" name="init" type="submit" >Please Go Ahead</button>
-<button class="button init-button return" name="abort" type="submit" >Go Back</button>
+<div class="init-explanation">Initialization completed successfully</div>
+<form method="POST" action = "../index.php?init=complete">
+<button class="button init-complete" name="init" type="submit" >Take me back</button>
 </form>
 </div>
 

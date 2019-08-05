@@ -1,4 +1,0 @@
-sudo /etc/init.d/apache2 start
-sudo /etc/init.d/mysql start
-mysql -h localhost -u root -p
-use <DB Name>;

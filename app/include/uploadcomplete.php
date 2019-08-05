@@ -1,7 +1,8 @@
 <?php
-$fullUrl = "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+$fullUrl = 'http://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
 
 $cookie_name = 'asg1';
+include_once 'authenticate.php';
 if(strpos($fullUrl, "upload=")){
 $url = parse_url($fullUrl);
 parse_str($url['query']);
@@ -22,7 +23,7 @@ $tempDestination = $upload;
 
   <meta charset="utf-8">
   <link rel="stylesheet" href="../style/index.css">
-  <link rel="stylesheet" href="../style/upload.css">
+  <link rel="stylesheet" href="../style/uploadcomplete.css">
   <link href="https://fonts.googleapis.com/css?family=Questrial" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css?family=Indie+Flower" rel="stylesheet">
 
@@ -35,20 +36,20 @@ $tempDestination = $upload;
 
 <?php
 
-if(isset($_COOKIE[$cookie_name])){
+if(authenticate($conn)){
   if($_COOKIE[$cookie_name] == 'admin')
   {
     echo '<a class="nav-txt">Welcome '.$_COOKIE[$cookie_name].'!</a>';
-    echo '<a class="nav-button"><form method="POST" action="include/logout.php">
+    echo '<a class="nav-button"><form method="POST" action="logout.php">
     <button style="float:right;"class="button logout-button">logout</button>
     </form></a>';
-    echo '<a class="nav-button"><form method="POST" action="include/initform.php">
+    echo '<a class="nav-button"><form method="POST" action="initform.php">
     <button style="float:right;"class="button init-button">Initialise</button>
     </form></a>';
   }
   else{
     echo '<a class="nav-txt">Welcome '.$_COOKIE[$cookie_name].'!</a>';
-    echo '<a class="nav-button"><form method="POST" action="include/logout.php">
+    echo '<a class="nav-button"><form method="POST" action="logout.php">
     <button style="float:right;"class="button logout-button">logout</button>
     </form></a>';
   }
@@ -66,8 +67,11 @@ if(isset($_COOKIE[$cookie_name])){
 </div>
 <div class="complete-container">
 	<div class="complete-row">
+    <div class="complete-column">
 	<?php	echo '<img src="'.$tempDestination.'">' ?>
+  <?php echo '<p> PERMALINK: http://'.$_SERVER[HTTP_HOST].'/images/'.basename($tempDestination).'</p>' ?>
 	</div>
+</div>
 	<div class="complete-row">
 		<form method = "POST" action ="../index.php">
 			<button class = "button" type ="submit"> Return to gallery</button>

@@ -1,122 +1,14 @@
 <?php
 include 'dbh.php';
- 
-function execute($command)
-    {
-        # remove newlines and convert single quotes to double to prevent errors
-        $command = str_replace(array("\n", "'"), array('', '"'), $command);
-        $command = escapeshellcmd($command);
-        # execute convert program
-        exec($command);
-    }
-     
-function border($input,$output, $color = 'black', $width = 20)
-    {
-        execute("convert $input -bordercolor $color -border {$width}x{$width} $output");
-    }
-
-function blur($input, $output, $radius = 10, $sigma= 5)
-    {   $temp = $radius* $sigma;
-        execute("convert $input -blur $temp $output");
-    }
-
- function lomo($input)
-    {
-        # copy original file and assign temporary name
-        $command = "convert $input -channel R -level 33% -channel G -level 33% $input";
-        execute($command);
-        vignette($input);
-        
-    }
-function vignette($input, $color_1 = 'none', $color_2 = 'black', $crop_factor = 1.5)
-    {   list($width,$height) = getimagesize($input);
-        $crop_x = floor($width * $crop_factor);
-        $crop_y = floor($height * $crop_factor);
-         
-        execute("convert 
-        ( {$input} ) 
-        ( -size {$crop_x}x{$crop_y} 
-        radial-gradient:$color_1-$color_2
-        -gravity center -crop {$width}x{$height}+0+0 +repage )
-        -compose multiply -flatten $input");   
-    }
-function lensflare($input,$output){
-  list($width,$height) = getimagesize($input);
-  $temp = $width * $height;
-  $cmd_1 = "convert '../tools/lensflare.png' -resize $width '../tools/tmp.png'";
-  execute($cmd_1);
-  $cmd_2 = "composite -compose screen -gravity northwest ../tools/tmp.png  $input $output";
-  execute($cmd_2);
-  $cmd_3 = "rm ../tools/tmp.png";
-  execute($cmd_3);
-}
-function blackwhite($input)
-{ 
-  list($width,$height) = getimagesize($input);
-  $temp = $width * $height;
-  
-  $cmd_1 = "convert $input -type grayscale $input";
-  execute($cmd_1);
-  $cmd_2= "convert ../tools/bwgrad.png -resize $temp '\! ../tools/tmp.png";
-  execute($cmd_2);
-  $cmd_3 = "composite -compose softlight -gravity center ../tools/tmp.png $input $input";
-  execute($cmd_3);
-  
-}
-
-function getNextPath($tempDestination, $currentversion){
-  $output = "";
-  $tempArray = explode('=', basename($tempDestination));
-  if($tempArray['0'] == 'version'){
-      $filename = $tempArray['2'];
-      $version = $tempArray['1'];
-      $version++;
-      $output = dirname($tempDestination).'/version='.$version.'='.$filename;
-  }else{
-
-    $output =dirname($tempDestination).'/version=1'.'='.basename($tempDestination);
-  }
-return $output;
-}
-
-function getPreviousPath($tempDestination){
-  $tempArray = explode('=', basename($tempDestination));
-  $output = "";
-  if($tempArray['0'] == 'version'){
-      $filename = $tempArray['2'];
-      $version = $tempArray['1'];
-      if($version == 1)
-      {
-        $output= dirname($tempDestination).'/'.$filename;
-  
-      }else
-      {
-        $version--;
-        $output = dirname($tempDestination).'/version='.$version.'='.$filename;
-      }
-      
-  }else{
-
-    $output = dirname($tempDestination).'/'.basename($tempDestination);
- 
-  }
-return $output;
-
-}
+include 'filterhelper.php'; 
 
 $currentversion = 0; 
-$fullUrl = "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+$fullUrl = 'http://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
 if(strpos($fullUrl, "upload=")){
 $url = parse_url($fullUrl);
 parse_str($url['query']);
 
-
 $tempDestination = $upload;
-echo dirname($tempDestination);
-echo('delimiter');
-echo basename($tempDestination);
-echo'\n';
-
 $nextversion = $currentversion+1;
 
 
@@ -141,12 +33,14 @@ if($filterFunction == 'border'){
   $tempDestination = $outputDestination;
 
 }elseif($filterFunction == 'lomo'){
-  lomo($tempDestination);
+  lomo($tempDestination, $outputDestination);
+  $tempDestination = $outputDestination;
 }elseif($filterFunction == 'lensflare'){
   lensflare($tempDestination,$outputDestination);
   $tempDestination = $outputDestination;
 }elseif($filterFunction == 'bw'){
-  blackwhite($tempDestination);
+  blackwhite($tempDestination, $outputDestination);
+  $tempDestination = $outputDestination;
 }
 
 
@@ -258,9 +152,7 @@ if($commandmode == 'discard'){
     <a class="nav-heading" href="#home">Webgram </a>
     <a class="nav-bar"> &#124 </a>
 
-    <a class="nav-button"><form method="POST" action="../index.php">
-    <button class="button login-button" name="home" type="submit" >Home</button>
-  </form></a>
+    
 </div>
 
 <div class="editor-container">
@@ -330,9 +222,9 @@ if(isset($_POST['undo'])){
 <div class="editor-row">
 <div class= "editor-column-lg">
 <?php echo'<form method="POST" action="editor.php?upload='.$tempDestination."&version=".$currentversion.'">'; ?>
-<button class="button filter-control" name="undo" type="submit">Undo</button>
-<button class="button filter-control"name="discard" type="submit">Discard</button>
-<button class="button filter-control"name="finish" type="submit">Finish</button>
+<button class="button filter-control yellow" name="undo" type="submit">Undo</button>
+<button class="button filter-control red"name="discard" type="submit">Discard</button>
+<button class="button filter-control green"name="finish" type="submit">Finish</button>
 </form>
 </div>
 </div>
